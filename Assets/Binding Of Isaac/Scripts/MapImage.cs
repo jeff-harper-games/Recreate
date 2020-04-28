@@ -17,16 +17,28 @@ public class MapImage : MonoBehaviour
     private bool active; 
     private bool discovered;
     private RectTransform rectTransform;
+    private RoomManager manager;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
     }
 
-    public void Setup(Vector2Int gridPos, Sprite mapIcon = null, bool complete = false, bool active = false, bool discovered = false)
+    public Vector2 GetMaxOffset()
     {
+        return rectTransform.offsetMax;
+    }
+
+    public Vector2 GetMinOffset()
+    {
+        return rectTransform.offsetMin;
+    }
+
+    public void Setup(RoomManager manager, Vector2Int gridPos, Vector2 offset, Sprite mapIcon = null, bool complete = false, bool active = false, bool discovered = false)
+    {
+        this.manager = manager;
         Vector2 position = new Vector2(gridPos.x * rectTransform.sizeDelta.x, gridPos.y * rectTransform.sizeDelta.y);
-        rectTransform.anchoredPosition = position;
+        rectTransform.anchoredPosition = position - offset;
         if (mapIcon)
             iconImage.sprite = mapIcon;
         else
@@ -58,6 +70,7 @@ public class MapImage : MonoBehaviour
     {
         active = true;
         completeImage.color = activeColor;
+        manager.CheckBoundary(rectTransform.anchoredPosition);
     }
 
     public void Exit()

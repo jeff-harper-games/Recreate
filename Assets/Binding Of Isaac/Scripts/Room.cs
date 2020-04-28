@@ -17,9 +17,11 @@ public class Room : MonoBehaviour
     */
 
     public RoomGenerator generator;
+    public RoomManager manager;
     public int step;
     public Vector2Int gridPos;
     public List<Connection> connections = new List<Connection>();
+    public List<Room> adjacentRooms = new List<Room>();
     public RoomType roomType = RoomType.Standard;
     public MapImage mapImage; 
 
@@ -30,9 +32,10 @@ public class Room : MonoBehaviour
 
     // pass in the generator, gridPos, connection, and step
     // add connection to list of connections
-    public void Setup(RoomGenerator generator, Vector2Int gridPos, Connection connection = Connection.None, int step = 0)
+    public void Setup(RoomGenerator generator, RoomManager manager, Vector2Int gridPos, Connection connection = Connection.None, int step = 0)
     {
         this.generator = generator;
+        this.manager = manager;
         this.gridPos = gridPos;
         this.step = step;
         AddConnection(connection);
@@ -108,6 +111,11 @@ public class Room : MonoBehaviour
         return openConections;
     }
 
+    public void AddAdjacentRoom(Room room)
+    {
+        adjacentRooms.Add(room);
+    }
+
     private void OnDrawGizmos()
     {
         if (roomType == RoomType.Root)
@@ -137,5 +145,28 @@ public class Room : MonoBehaviour
         }
 
 
+    }
+
+    private void OnMouseDown()
+    {
+        if (manager.currentRoom == this)
+            mapImage.Complete();
+
+        manager.SetCurrentRoom(this);
+    }
+
+    public void Enter()
+    {
+        mapImage.Enter();
+
+        for (int i = 0; i < adjacentRooms.Count; i++)
+        {
+            adjacentRooms[i].mapImage.Discover();
+        }
+    }
+
+    public void Exit()
+    {
+        mapImage.Exit();
     }
 }

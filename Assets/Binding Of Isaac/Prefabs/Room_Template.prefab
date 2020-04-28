@@ -91,6 +91,7 @@ GameObject:
   - component: {fileID: 4221396688849971394}
   - component: {fileID: 7613863517118157883}
   - component: {fileID: 3894467663462380508}
+  - component: {fileID: 811997783369126893}
   m_Layer: 0
   m_Name: Room_Template
   m_TagString: Untagged
@@ -176,14 +177,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generator: {fileID: 0}
+  manager: {fileID: 0}
   step: 0
   gridPos: {x: 0, y: 0}
   connections: 
+  adjacentRooms: []
   roomType: 2
+  mapImage: {fileID: 0}
   leftDoor: {fileID: 7253763505433412569}
   topDoor: {fileID: 4392915961731939941}
   rightDoor: {fileID: 7987966060337511161}
   bottomDoor: {fileID: 1051275338874383351}
+--- !u!65 &811997783369126893
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2509981363907927354}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 0.4749999, z: 1}
+  m_Center: {x: 0, y: 0.23749995, z: 0}
 --- !u!1 &4392915961731939941
 GameObject:
   m_ObjectHideFlags: 0
