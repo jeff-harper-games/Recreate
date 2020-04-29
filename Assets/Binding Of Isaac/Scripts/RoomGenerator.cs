@@ -14,7 +14,8 @@ public class RoomGenerator : MonoBehaviour
     private Coroutine generating; 
 
     public CinemachineVirtualCamera worldVirtCam;
-    public GameObject roomVirtCam; 
+    public GameObject roomVirtCam;
+    public GameObject player; 
     public Room roomPrefab;
     public int numOfRooms = 10;
     public MapImage mapImagePrefab;
@@ -45,16 +46,22 @@ public class RoomGenerator : MonoBehaviour
 
     private void Start()
     {
+        //Generate();
         generating = StartCoroutine(Generate());
     }
 
     private IEnumerator Generate()
     {
+        player.SetActive(false);
         roomVirtCam.SetActive(false);
         minimapFade.alpha = 0.0f;
+        if (manager.canMove)
+        {
+            manager.canMove = false; 
+            yield return new WaitForSeconds(2.0f);
+        }
         if (spawnedRooms.Count > 0)
         {
-            yield return new WaitForSeconds(2.0f);
             // clear rooms 
             for (int i = 0; i < spawnedRooms.Count; i++)
             {
@@ -250,8 +257,8 @@ public class RoomGenerator : MonoBehaviour
             deadends[3].mapImage.SetIcon(icons.storeIcon, icons.storeColor);
         }
 
-        manager.SetCurrentRoom(root);
-        root.Enter();
+        manager.SetCurrentRoom(root, false);
+        //root.Enter();
 
         generating = null; 
     }
@@ -260,6 +267,7 @@ public class RoomGenerator : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            //Generate();
             if (generating != null)
                 StopCoroutine(generating);
             generating = StartCoroutine(Generate());

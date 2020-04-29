@@ -290,7 +290,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -643,7 +643,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 5b254fd424e00184fbddf5f55679b488, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -822,7 +822,7 @@ MonoBehaviour:
   mapImagePrefab: {fileID: 7357515747881758149, guid: e10a04b82fccf674e9a7b54934676948,
     type: 3}
   roomVirtCam: {fileID: 2006782191}
-  pauseDuration: 2
+  pauseDuration: 1
   panDuration: 1
   minimapFade: {fileID: 1271385553}
   minimapAlpha: 0.75
@@ -871,6 +871,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   worldVirtCam: {fileID: 1817772943}
   roomVirtCam: {fileID: 2006782190}
+  player: {fileID: 1091399035}
   roomPrefab: {fileID: 864454489845507821, guid: 75d6ed1ea97c1014f804de52222cb1b7,
     type: 3}
   numOfRooms: 10

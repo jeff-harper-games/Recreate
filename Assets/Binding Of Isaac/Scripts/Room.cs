@@ -105,6 +105,11 @@ public class Room : MonoBehaviour
         adjacentRooms.Add(room);
     }
 
+    public void Complete()
+    {
+        mapImage.Complete();
+    }
+
     private void OnDrawGizmos()
     {
         if (roomType == RoomType.Root)
@@ -157,6 +162,8 @@ public class Room : MonoBehaviour
         {
             adjacentRooms[i].mapImage.Discover();
         }
+
+        Complete();
     }
 
     public void Exit()

@@ -35,22 +35,24 @@ public class RoomManager : MonoBehaviour
         canMove = false;
         roomVirtCam.gameObject.SetActive(false);
         player.position = playerStartPos;
-        if (pausing != null)
-            StopCoroutine(pausing);
-        pausing = StartCoroutine(PauseToZoom());
+        //if (pausing != null)
+        //    StopCoroutine(pausing);
+        //pausing = StartCoroutine(PauseToZoom());
     }
 
     private IEnumerator PauseToZoom()
     {
-        yield return new WaitForSeconds(pauseDuration);
+        //yield return new WaitForSeconds(pauseDuration);
         roomVirtCam.gameObject.SetActive(true);
         yield return new WaitForSeconds(2.0f);
         canMove = true;
         minimapFade.alpha = minimapAlpha;
-        pausing = null; 
+        pausing = null;
+        currentRoom.Enter();
+        player.gameObject.SetActive(true);
     }
 
-    public void SetCurrentRoom(Room room)
+    public void SetCurrentRoom(Room room, bool moveCamera = true)
     {
         if(currentRoom)
             currentRoom.Exit();
@@ -60,11 +62,15 @@ public class RoomManager : MonoBehaviour
         float xPos = currentRoom.transform.position.x;
         float zPos = currentRoom.transform.position.z;
 
-        StartCoroutine(MoveCamera(new Vector3(xPos, roomVirtCam.transform.position.y, zPos)));
+        if (moveCamera)
+            StartCoroutine(MoveCamera(new Vector3(xPos, roomVirtCam.transform.position.y, zPos)));
+        else
+            roomVirtCam.transform.position = new Vector3(xPos, roomVirtCam.transform.position.y, zPos);
     }
 
     private IEnumerator MoveCamera(Vector3 endPos)
     {
+        Debug.Log("Move Camera");
         Vector3 startPos = roomVirtCam.transform.position;
         canMove = false;
         for (float t = 0; t < 1.0f; t += Time.deltaTime / panDuration)
@@ -114,5 +120,16 @@ public class RoomManager : MonoBehaviour
             float y = Mathf.Abs(min.y - yOffset) - Mathf.Abs(mapArea.offsetMin.y);
             mapContainer.anchoredPosition += new Vector2(0, y);
         }
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            if (pausing != null)
+                StopCoroutine(pausing);
+            pausing = StartCoroutine(PauseToZoom());
+        }
+
     }
 }
