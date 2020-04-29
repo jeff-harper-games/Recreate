@@ -3,68 +3,58 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
+using Cinemachine;
 
 public class RoomGenerator : MonoBehaviour
 {
-    /*
-     * room prefab
-     * list of rooms spawned
-     * list of vector2 for the grid
-     */
+    private RoomManager manager;
+    private List<MapImage> mapImages = new List<MapImage>();
+    private List<Room> spawnedRooms = new List<Room>();
+    private List<Room> deadends = new List<Room>();
+    private Coroutine generating; 
 
-    public RoomManager manager;
+    public CinemachineVirtualCamera worldVirtCam;
+    public GameObject roomVirtCam; 
     public Room roomPrefab;
-    public List<Room> spawnedRooms = new List<Room>();
-    public List<Vector2Int> grid = new List<Vector2Int>();
-    public List<Room> deadends = new List<Room>();
-
     public int numOfRooms = 10;
-
     public MapImage mapImagePrefab;
-    public List<MapImage> mapImages = new List<MapImage>(); 
     public RectTransform mapContainer;
-    public float mapImageBuffer = 10.0f;
-
-    public Sprite rootIcon;
-    public Color rootColor = Color.green;
-    public Sprite bossIcon;
-    public Color bossColor = Color.red; 
-    public Sprite treasureIcon;
-    public Color treasureColor = Color.yellow;
-    public Sprite storeIcon;
-    public Color storeColor = Color.blue;
-    public Sprite minibossIcon;
-    public Color minibossColor = Color.black;
-
-    public Vector2 totalUIGridSize; 
-
-
-    /*
-    public int stageID = 1;
-    public RoomAmountCalculation calculations;
-
+    public CanvasGroup minimapFade; 
+    public Icons icons;
+    public List<Vector2Int> grid { get; set; }
 
     [System.Serializable]
-    public class RoomAmountCalculation
+    public class Icons
     {
-        public int maxRooms = 20;
-        public int randMin = 0;
-        public int randMax = 2;
-        public int controlAmount = 5;
-        public int multiplier = 10;
-        public int divider = 3;
-    }    
-    */
+        public Sprite rootIcon;
+        public Color rootColor = Color.green;
+        public Sprite bossIcon;
+        public Color bossColor = Color.red;
+        public Sprite treasureIcon;
+        public Color treasureColor = Color.yellow;
+        public Sprite storeIcon;
+        public Color storeColor = Color.blue;
+        public Sprite minibossIcon;
+        public Color minibossColor = Color.black;
+    }
+
+    private void Awake()
+    {
+        manager = FindObjectOfType<RoomManager>();
+    }
 
     private void Start()
     {
-        Generate();
+        generating = StartCoroutine(Generate());
     }
 
-    private void Generate()
+    private IEnumerator Generate()
     {
+        roomVirtCam.SetActive(false);
+        minimapFade.alpha = 0.0f;
         if (spawnedRooms.Count > 0)
         {
+            yield return new WaitForSeconds(2.0f);
             // clear rooms 
             for (int i = 0; i < spawnedRooms.Count; i++)
             {
@@ -81,17 +71,23 @@ public class RoomGenerator : MonoBehaviour
             mapImages.Clear();
         }
 
+        spawnedRooms = new List<Room>();
+        grid = new List<Vector2Int>();
+        mapImages = new List<MapImage>(); 
+        manager.ResetPlayer();
+
         // spawn root room
         Room root = Instantiate(roomPrefab, Vector3.zero, Quaternion.identity);
         root.Setup(this, manager, Vector2Int.zero);
         root.roomType = RoomType.Root;
+
         // add it to the rooms list
         spawnedRooms.Add(root);
+
         // add to grid
         grid.Add(Vector2Int.zero);
 
         // spawn rooms
-
         // while (spawned < rooms.Count)
         while (spawnedRooms.Count < numOfRooms)
         {
@@ -138,18 +134,16 @@ public class RoomGenerator : MonoBehaviour
                     break;
             }
 
-            Room newRoom = Instantiate(roomPrefab, new Vector3(gridPos.x, 0, gridPos.y), Quaternion.identity);
-            /*
-            mapImage.rectTransform.anchoredPosition = new Vector2(gridPos.x * mapImage.rectTransform.sizeDelta.x,
-                gridPos.y * mapImage.rectTransform.sizeDelta.y);
-            */
+            float xPos = roomPrefab.transform.localScale.x * gridPos.x;
+            float zPos = roomPrefab.transform.localScale.z * gridPos.y;
+            Room newRoom = Instantiate(roomPrefab, new Vector3(xPos, 0, zPos), Quaternion.identity);
             newRoom.Setup(this, manager, gridPos, newConn, room.step + 1);
-
             room.AddAdjacentRoom(newRoom);
             newRoom.AddAdjacentRoom(room);
 
             // add it to the rooms list
             spawnedRooms.Add(newRoom);
+
             // add to grid
             grid.Add(gridPos);
         }
@@ -174,32 +168,48 @@ public class RoomGenerator : MonoBehaviour
                 yMax = grid[i].y;
         }
 
+        float xCamScale = ((Mathf.Abs(xMax) + Mathf.Abs(xMin)) * roomPrefab.transform.localScale.x) + roomPrefab.transform.localScale.x;
+        float yCamScale = ((Mathf.Abs(yMax) + Mathf.Abs(yMin)) * roomPrefab.transform.localScale.z) + roomPrefab.transform.localScale.z;
+
+        if (xCamScale * (Screen.height / Screen.width) < yCamScale * (Screen.width / Screen.height))
+        {
+            worldVirtCam.m_Lens.OrthographicSize = yCamScale / 2 + 50;
+        }
+        else
+        {
+            float unitsPerPixel = xCamScale / Screen.width;
+            float desiredHalfHeight = 0.5f * unitsPerPixel * Screen.height;
+            worldVirtCam.m_Lens.OrthographicSize = desiredHalfHeight + 50;
+        }
+
+        Vector2 midpoint = (new Vector2(xMax * roomPrefab.transform.localScale.x, yMax * roomPrefab.transform.localScale.z) 
+            + new Vector2(xMin * roomPrefab.transform.localScale.x, yMin * roomPrefab.transform.localScale.z)) / 2;
+        worldVirtCam.transform.position = new Vector3(midpoint.x, 50, midpoint.y);
+
         Vector2 mapImageSize = mapImagePrefab.GetComponent<RectTransform>().sizeDelta;
         Vector2 mapContainerSize = new Vector2((Mathf.Abs(xMax) + Mathf.Abs(xMin)) * mapImageSize.x, (Mathf.Abs(yMax) + Mathf.Abs(yMin)) * mapImageSize.y) + mapImageSize;
         mapContainer.sizeDelta = mapContainerSize;
-        Vector2 mapOffset = ((new Vector2((xMax * mapImageSize.x) + (mapImageSize.x / 2), (yMax * mapImageSize.y) + (mapImageSize.y / 2))) 
-            + new Vector2((xMin * mapImageSize.x) - (mapImageSize.x / 2), (yMin * mapImageSize.y) - (mapImageSize.y / 2))) / 2;
 
+        float mapOffsetX = (xMax * mapImageSize.x) + (mapImageSize.x / 2) + (xMin * mapImageSize.x) - (mapImageSize.x / 2);
+        float mapOffsetY = (yMax * mapImageSize.y) + (mapImageSize.y / 2) + (yMin * mapImageSize.y) - (mapImageSize.y / 2);
+        Vector2 mapOffset = new Vector2(mapOffsetX, mapOffsetY) / 2;
 
         for (int i = 0; i < spawnedRooms.Count; i++)
         {
             MapImage mapImage = Instantiate(mapImagePrefab, mapContainer);
             spawnedRooms[i].SetMapImage(mapImage);
             mapImages.Add(mapImage);
-            //mapImage.Hide();
-            mapImage.Discover();
+            mapImage.Hide();
             if (i != 0)
                 mapImage.Setup(manager, spawnedRooms[i].gridPos, mapOffset, null, false, false, false);
             else
             {
-                mapImage.Setup(manager, spawnedRooms[i].gridPos, mapOffset, rootIcon, true, true, true);
-                mapImage.SetIcon(rootIcon, rootColor);
+                mapImage.Setup(manager, spawnedRooms[i].gridPos, mapOffset, icons.rootIcon, true, true, true);
+                mapImage.SetIcon(icons.rootIcon, icons.rootColor);
             }
 
             if (spawnedRooms[i].connections.Count == 1)
-            {
                 deadends.Add(spawnedRooms[i]);
-            }
         }
 
         deadends = deadends.OrderByDescending(ctx => ctx.step).ToList();
@@ -207,7 +217,7 @@ public class RoomGenerator : MonoBehaviour
         if (deadends.Count > 0)
         {
             deadends[0].roomType = RoomType.Boss;
-            deadends[0].mapImage.SetIcon(bossIcon, bossColor);
+            deadends[0].mapImage.SetIcon(icons.bossIcon, icons.bossColor);
         }
 
 
@@ -217,12 +227,12 @@ public class RoomGenerator : MonoBehaviour
             if (deadends.Count > 1)
             {
                 deadends[1].roomType = RoomType.Miniboss;
-                deadends[1].mapImage.SetIcon(minibossIcon, minibossColor);
+                deadends[1].mapImage.SetIcon(icons.minibossIcon, icons.minibossColor);
             }
             if (deadends.Count > 2)
             {
                 deadends[2].roomType = RoomType.Treasure;
-                deadends[2].mapImage.SetIcon(treasureIcon, treasureColor);
+                deadends[2].mapImage.SetIcon(icons.treasureIcon, icons.treasureColor);
             }
         }
         else
@@ -230,55 +240,29 @@ public class RoomGenerator : MonoBehaviour
             if (deadends.Count > 1)
             {
                 deadends[1].roomType = RoomType.Treasure;
-                deadends[1].mapImage.SetIcon(treasureIcon, treasureColor);
+                deadends[1].mapImage.SetIcon(icons.treasureIcon, icons.treasureColor);
             }
         }
 
         if (deadends.Count > 3)
         {
             deadends[3].roomType = RoomType.Store;
-            deadends[3].mapImage.SetIcon(storeIcon, storeColor);
+            deadends[3].mapImage.SetIcon(icons.storeIcon, icons.storeColor);
         }
 
         manager.SetCurrentRoom(root);
         root.Enter();
 
-
-        /*
-        float xMin = 0; 
-        float xMax = 0; 
-        float yMin = 0; 
-        float yMax = 0; 
-
-        for (int i = 0; i < mapImages.Count; i++)
-        {
-            Vector2 max = mapImages[i].GetMaxOffset();
-            Vector2 min = mapImages[i].GetMinOffset();
-            if (max.x > xMax)
-                xMax = max.x;
-            if (max.y > yMax)
-                yMax = max.y;
-            if (min.x < xMin)
-                xMin = min.x;
-            if (min.y < yMin)
-                yMin = min.y;
-        }
-
-        Debug.Log("" + (Mathf.Abs(xMax) + Mathf.Abs(xMin)) + " x " + (Mathf.Abs(yMax) + Mathf.Abs(yMin)));
-
-        mapContainer.sizeDelta = new Vector2(Mathf.Abs(xMax) + Mathf.Abs(xMin), Mathf.Abs(yMax) + Mathf.Abs(yMin));
-        mapContainer.anchoredPosition = (new Vector2(xMax, yMax) + new Vector2(xMin, yMin)) / 2;
-
-        for (int i = 0; i < mapImages.Count; i++)
-        {
-            mapImages[i].transform.SetParent(mapContainer);
-        }
-        */
+        generating = null; 
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
-            Generate();
+        {
+            if (generating != null)
+                StopCoroutine(generating);
+            generating = StartCoroutine(Generate());
+        }
     }
 }

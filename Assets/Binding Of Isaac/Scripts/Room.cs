@@ -7,37 +7,31 @@ public enum RoomType { Root, Boss, Standard, Treasure, Store, Miniboss }
 
 public class Room : MonoBehaviour
 {
-    /*
-     * int step
-     * vector2 gridPos
-     * gameobjects 4 doors
-     * list of connections
-     * ref to generator
-     * room type
-    */
 
-    public RoomGenerator generator;
-    public RoomManager manager;
-    public int step;
-    public Vector2Int gridPos;
-    public List<Connection> connections = new List<Connection>();
-    public List<Room> adjacentRooms = new List<Room>();
-    public RoomType roomType = RoomType.Standard;
-    public MapImage mapImage; 
+    private RoomGenerator generator;
+    private RoomManager manager;
+    private List<Room> adjacentRooms = new List<Room>();
+    private bool roomActive = false; 
+
+    public int step { get; set; }
+    public Vector2Int gridPos { get; set; }
+    public List<Connection> connections { get; set; }
+    public RoomType roomType { get; set; }
+    public MapImage mapImage { get; set; }
 
     public GameObject leftDoor; 
     public GameObject topDoor; 
     public GameObject rightDoor; 
     public GameObject bottomDoor; 
 
-    // pass in the generator, gridPos, connection, and step
-    // add connection to list of connections
     public void Setup(RoomGenerator generator, RoomManager manager, Vector2Int gridPos, Connection connection = Connection.None, int step = 0)
     {
         this.generator = generator;
         this.manager = manager;
         this.gridPos = gridPos;
         this.step = step;
+
+        connections = new List<Connection>();
         AddConnection(connection);
     }
 
@@ -75,11 +69,6 @@ public class Room : MonoBehaviour
 
     public List<Connection> GetPossibleConnections()
     {
-        // check all existing connections
-        // if a connection does not exist
-        // check if there is anything blocking that space
-        // if both == true, add to connections
-
         List<Connection> openConections = new List<Connection>();
 
         List<Vector2Int> grid = generator.grid;
@@ -147,16 +136,21 @@ public class Room : MonoBehaviour
 
     }
 
-    private void OnMouseDown()
+    private void OnTriggerEnter(Collider other)
     {
-        if (manager.currentRoom == this)
-            mapImage.Complete();
-
-        manager.SetCurrentRoom(this);
+        if (other.CompareTag("Player"))
+        {
+            Enter();
+        }
     }
 
     public void Enter()
     {
+        if (roomActive)
+            return;
+
+        roomActive = true;
+        manager.SetCurrentRoom(this);
         mapImage.Enter();
 
         for (int i = 0; i < adjacentRooms.Count; i++)
@@ -167,6 +161,7 @@ public class Room : MonoBehaviour
 
     public void Exit()
     {
+        roomActive = false;
         mapImage.Exit();
     }
 }

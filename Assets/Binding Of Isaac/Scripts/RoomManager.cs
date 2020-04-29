@@ -1,35 +1,94 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 
 public class RoomManager : MonoBehaviour
 {
-    public Room currentRoom;
-    public Vector2 mapImageSize = new Vector2(50, 25);
+    private Room currentRoom; 
+    //private Transform mainCamera;
+    private Transform player;
+    private Vector2 mapImageSize;
+    private Vector3 playerStartPos;
+    private Coroutine pausing; 
+
     public RectTransform mapArea;
-    public RectTransform mapContainer; 
+    public RectTransform mapContainer;
+    public RectTransform mapImagePrefab;
+    public CinemachineVirtualCamera roomVirtCam;
+    public float pauseDuration = 5.0f;
+    public float panDuration = 1.0f;
+    public CanvasGroup minimapFade;
+    public float minimapAlpha = 0.75f;
+    public bool canMove { get; set; }
+
+    private void Awake()
+    {
+        //mainCamera = Camera.main.transform;
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        playerStartPos = player.position;
+        mapImageSize = mapImagePrefab.sizeDelta;
+    }
+
+    public void ResetPlayer()
+    {
+        canMove = false;
+        roomVirtCam.gameObject.SetActive(false);
+        player.position = playerStartPos;
+        if (pausing != null)
+            StopCoroutine(pausing);
+        pausing = StartCoroutine(PauseToZoom());
+    }
+
+    private IEnumerator PauseToZoom()
+    {
+        yield return new WaitForSeconds(pauseDuration);
+        roomVirtCam.gameObject.SetActive(true);
+        yield return new WaitForSeconds(2.0f);
+        canMove = true;
+        minimapFade.alpha = minimapAlpha;
+        pausing = null; 
+    }
 
     public void SetCurrentRoom(Room room)
     {
         if(currentRoom)
-            currentRoom.mapImage.Exit();
+            currentRoom.Exit();
         
         currentRoom = room;
-        currentRoom.Enter();
+
+        float xPos = currentRoom.transform.position.x;
+        float zPos = currentRoom.transform.position.z;
+
+        StartCoroutine(MoveCamera(new Vector3(xPos, roomVirtCam.transform.position.y, zPos)));
+    }
+
+    private IEnumerator MoveCamera(Vector3 endPos)
+    {
+        Vector3 startPos = roomVirtCam.transform.position;
+        canMove = false;
+        for (float t = 0; t < 1.0f; t += Time.deltaTime / panDuration)
+        {
+            Vector3 position = Vector3.Lerp(startPos, endPos, t);
+            roomVirtCam.transform.position = position;
+            yield return null;
+        }
+        canMove = true; 
     }
 
     public void CheckBoundary(Vector2 position)
     {
+        if (mapContainer.sizeDelta.x < mapArea.sizeDelta.x && mapContainer.sizeDelta.y < mapArea.sizeDelta.y)
+            return;
+
         Vector2 offset = mapArea.sizeDelta - mapContainer.sizeDelta;
         offset = new Vector2(Mathf.Abs(offset.x), offset.y) / 2;
-        Debug.Log("offset:" + offset);
         float xOffset = (mapContainer.sizeDelta.x / 2) - offset.x + mapContainer.anchoredPosition.x;
+
         float yOffset = (mapContainer.sizeDelta.y - mapArea.sizeDelta.y) / 2;
         yOffset = (mapContainer.sizeDelta.y / 2) - yOffset - mapContainer.anchoredPosition.y;
 
         Vector2 max = position + (mapImageSize / 2);
-        Debug.Log(yOffset + " / " + max.y);
-        //Debug.Log("max:" + max);
         Vector2 min = position - (mapImageSize / 2);
 
         if (max.x + xOffset > mapArea.offsetMax.x)
@@ -40,7 +99,8 @@ public class RoomManager : MonoBehaviour
 
         if (max.y > yOffset)
         {
-            mapContainer.anchoredPosition -= new Vector2(0, max.y - yOffset);
+            float y = max.y - yOffset;
+            mapContainer.anchoredPosition -= new Vector2(0, y);
         }
 
         if (min.x + xOffset < mapArea.offsetMin.x)
@@ -51,32 +111,8 @@ public class RoomManager : MonoBehaviour
 
         if (min.y - yOffset < mapArea.offsetMin.y)
         {
-            mapContainer.anchoredPosition += new Vector2(0, max.y - mapArea.offsetMin.y);
+            float y = Mathf.Abs(min.y - yOffset) - Mathf.Abs(mapArea.offsetMin.y);
+            mapContainer.anchoredPosition += new Vector2(0, y);
         }
-
-        /*
-        if ((max + centerOffset).y > mapContainer.anchoredPosition.y + centerOffset.y)
-        {
-            float y = (max + centerOffset).y - mapContainer.anchoredPosition.y + centerOffset.y;
-
-            Debug.Log("" + (max + centerOffset).y);
-            mapContainer.anchoredPosition -= new Vector2(0, y);
-        }
-        */
-
-
-
-
-        /*
-        if (max.x > mapArea.offsetMax.x)
-            mapContainer.anchoredPosition -= new Vector2(mapImageSize.x, 0);
-        if(max.y > mapArea.offsetMax.y)
-            mapContainer.anchoredPosition -= new Vector2(0, mapImageSize.y);
-
-        if (min.x < mapArea.offsetMin.x)
-            mapContainer.anchoredPosition += new Vector2(mapImageSize.x, 0);
-        if (min.y < mapArea.offsetMin.y)
-            mapContainer.anchoredPosition += new Vector2(0, mapImageSize.y);
-            */
     }
 }
