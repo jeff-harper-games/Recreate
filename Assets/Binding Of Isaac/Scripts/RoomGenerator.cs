@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using System.Linq;
 using Cinemachine;
 
@@ -20,7 +19,8 @@ public class RoomGenerator : MonoBehaviour
     public int numOfRooms = 10;
     public MapImage mapImagePrefab;
     public RectTransform mapContainer;
-    public CanvasGroup minimapFade; 
+    public CanvasGroup minimapFade;
+    public float cameraScaleBuffer = 25.0f;
     public Icons icons;
     public List<Vector2Int> grid { get; set; }
 
@@ -178,15 +178,19 @@ public class RoomGenerator : MonoBehaviour
         float xCamScale = ((Mathf.Abs(xMax) + Mathf.Abs(xMin)) * roomPrefab.transform.localScale.x) + roomPrefab.transform.localScale.x;
         float yCamScale = ((Mathf.Abs(yMax) + Mathf.Abs(yMin)) * roomPrefab.transform.localScale.z) + roomPrefab.transform.localScale.z;
 
-        if (xCamScale * (Screen.height / Screen.width) < yCamScale * (Screen.width / Screen.height))
+        float screenRatio = (float)Screen.width / (float)Screen.height;
+        float targetRatio = xCamScale / yCamScale;
+
+        if (screenRatio >= targetRatio)
         {
-            worldVirtCam.m_Lens.OrthographicSize = yCamScale / 2 + 50;
+            worldVirtCam.m_Lens.OrthographicSize = yCamScale / 2;
+            worldVirtCam.m_Lens.OrthographicSize += cameraScaleBuffer;
         }
         else
         {
-            float unitsPerPixel = xCamScale / Screen.width;
-            float desiredHalfHeight = 0.5f * unitsPerPixel * Screen.height;
-            worldVirtCam.m_Lens.OrthographicSize = desiredHalfHeight + 50;
+            float difference = targetRatio / screenRatio;
+            worldVirtCam.m_Lens.OrthographicSize = yCamScale / 2 * difference;
+            worldVirtCam.m_Lens.OrthographicSize += cameraScaleBuffer;
         }
 
         Vector2 midpoint = (new Vector2(xMax * roomPrefab.transform.localScale.x, yMax * roomPrefab.transform.localScale.z) 

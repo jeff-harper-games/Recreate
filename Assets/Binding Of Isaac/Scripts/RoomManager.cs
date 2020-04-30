@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
 
@@ -35,14 +34,10 @@ public class RoomManager : MonoBehaviour
         canMove = false;
         roomVirtCam.gameObject.SetActive(false);
         player.position = playerStartPos;
-        //if (pausing != null)
-        //    StopCoroutine(pausing);
-        //pausing = StartCoroutine(PauseToZoom());
     }
 
     private IEnumerator PauseToZoom()
     {
-        //yield return new WaitForSeconds(pauseDuration);
         roomVirtCam.gameObject.SetActive(true);
         yield return new WaitForSeconds(2.0f);
         canMove = true;
@@ -130,6 +125,5 @@ public class RoomManager : MonoBehaviour
                 StopCoroutine(pausing);
             pausing = StartCoroutine(PauseToZoom());
         }
-
     }
 }

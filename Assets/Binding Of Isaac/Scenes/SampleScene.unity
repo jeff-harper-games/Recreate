@@ -879,6 +879,7 @@ MonoBehaviour:
     type: 3}
   mapContainer: {fileID: 680272094}
   minimapFade: {fileID: 1271385553}
+  cameraScaleBuffer: 10
   icons:
     rootIcon: {fileID: 21300000, guid: d268cedeca4aad64e952d39d4b7e8879, type: 3}
     rootColor: {r: 0, g: 1, b: 0, a: 1}
